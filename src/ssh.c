@@ -54,34 +54,7 @@
 #include <string.h>     /* for memset()            */
 #include "ssh.h"     
 #include "p2f.h"        /* for zprintf_ ...        */
-
-/********************************************
- *********
- * LOGGING
- *********
- ********************************************/
-/** select destination for printing out information
- *
- ** TO_SCREEN = 0 for 'info' file
- *
- **  TO_SCREEN = 1 for 'stderr'
- */
-#define TO_SCREEN 1
-
-/** used to print out information during tls execution
- *
- ** print_dest will either be assigned to 'stderr' or 'info' file
- *  depending on the TO_SCREEN setting.
- */
-static FILE *print_dest = NULL;
-extern FILE *info;
-
-/** sends information to the destination output device */
-#define loginfo(...) { \
-        if (TO_SCREEN) print_dest = stderr; else print_dest = info; \
-        fprintf(print_dest,"%s: ", __FUNCTION__); \
-        fprintf(print_dest, __VA_ARGS__); \
-        fprintf(print_dest, "\n"); }
+#include "err.h"        /* for logging             */
 
 /*
  * from http://www.iana.org/assignments/ssh-parameters/ssh-parameters.xhtml
@@ -1300,31 +1273,31 @@ static int ssh_test_handshake() {
     ssh_process(&cli, &srv);
 
     if (strcmp(cli.protocol, "SSH-2.0-OpenSSH_7.4p1 Debian-10") != 0) {
-        loginfo("failure: cli protocol");
+        joy_log_err("failure: cli protocol");
         num_fails++;
     }
 
     if (strcmp(srv.protocol, "SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.8") != 0) {
-        loginfo("failure: srv protocol");
+        joy_log_err("failure: srv protocol");
         num_fails++;
     }
 
     if (strcmp(cli.kex_algo, "curve25519-sha256@libssh.org") != 0) {
-        loginfo("failure: cli kex_algo");
+        joy_log_err("failure: cli kex_algo");
         num_fails++;
     }
 
     if (strcmp(srv.kex_algo, "curve25519-sha256@libssh.org") != 0) {
-        loginfo("failure: srv kex_algo");
+        joy_log_err("failure: srv kex_algo");
         num_fails++;
     }
 
     if ( ! cli.newkeys) {
-        loginfo("failure: cli newkeys");
+        joy_log_err("failure: cli newkeys");
     }
 
     if ( ! cli.newkeys) {
-        loginfo("failure: cli newkeys");
+        joy_log_err("failure: cli newkeys");
     }
 
     ssh_delete(&cli);
@@ -1335,15 +1308,15 @@ static int ssh_test_handshake() {
 void ssh_unit_test() {
     int num_fails = 0;
 
-    loginfo("******************************");
-    loginfo("Starting...");
+    fprintf(info, "\n******************************\n");
+    fprintf(info, "SSH Unit Test starting...\n");
 
     num_fails += ssh_test_handshake();
 
     if (num_fails) {
-        loginfo("Finished - # of failures: %d", num_fails);
+        fprintf(info, "Finished - # of failures: %d\n", num_fails);
     } else {
-        loginfo("Finished - success");
+        fprintf(info, "Finished - success\n");
     }
-    loginfo("******************************\n");
+    fprintf(info, "******************************\n\n");
 } 
