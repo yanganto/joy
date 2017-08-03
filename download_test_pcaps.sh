@@ -17,7 +17,6 @@ ssh_ids="
     27a0080bc259e9b7ed88f80b4368b6df
     3ca92db8389f36a2b1983b4fb939be5d
     485772f7a42894de6e779ca5dd958562
-    5670b222406f2831dac227a46fd0e1f1
     80998f4345dea2ef46d847841f3b7327
     92671c9edb695af4e57d036343cdbedc
     a094700d574dcffa258c2ba19731440a
@@ -28,7 +27,6 @@ ssh_ids="
     d1e33523a8ccaf659e4c03b9f3c693a3
     ddc3b761ea918108ed8d64abeaa19d4a
     de357768a89f57c30428f7c3ee4b488e
-    fccafcd194d6c47a1019fefe8e90950a
 "
 
 tls_ids="
@@ -42,7 +40,6 @@ tls_ids="
     38e49a476ce14faf3876ecd84915c803
     4450959233ec05524f8b0d3893929633
     4ff360305f07ac7fce7522cd64548cf5
-    530c0dea9e2cdf0c091b5c77e4e70afc
     58768beb0032ffa76f1ba7134ac0a7d5
     76fd0570a5278e11724a25eacdc39136
     8e520af6c793463d4449f5c5dc2f4b4e
@@ -55,6 +52,11 @@ tls_ids="
     f54be5787808b0ef10472bf037852f22
     fcf108bd8cb63fa1fa14ffba00586198
 "
+
+# These pcaps throw lots of errors in wireshark: 
+# 530c0dea9e2cdf0c091b5c77e4e70afc
+# 5670b222406f2831dac227a46fd0e1f1
+# fccafcd194d6c47a1019fefe8e90950a
 
 mkdir -p $pcapdir/ssh
 for id in $ssh_ids
