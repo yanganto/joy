@@ -72,10 +72,10 @@ str_match_test:
 ##
 # testing
 ##
-test: joy joy_test.sh
+test: joy joy_test.py
 	./download_test_pcaps.sh test_pcaps/pcapr
 	$(BINDIR)/unit_test
-	./joy_test.sh
+	./joy_test.py
 
 ##
 # cscope
