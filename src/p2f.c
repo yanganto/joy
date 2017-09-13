@@ -1246,6 +1246,14 @@ static void flow_record_print_json (const struct flow_record *record) {
     const struct flow_record *rec;
     unsigned int pkt_len;
     char *dir;
+    double first_order_markov_chain[4] = { 0.0, 0.0, 0.0, 0.0 };
+	/*
+                 now dir
+               IN      OUT
+        IN     [0]  |   [1]
+last dir    --------+---------
+        OUT    [2]  |   [3]
+	*/
 
     //if (records_in_file != 0) {
     //    zprintf(output, ",\n");
@@ -1416,7 +1424,6 @@ static void flow_record_print_json (const struct flow_record *record) {
     zprintf(output, "\"packets\":[");
 
     if (rec->twin == NULL) {
-
         imax = rec->op > num_pkt_len ? num_pkt_len : rec->op;
         if (imax == 0) {
             ; /* no packets had data, so we print out nothing */
@@ -1442,11 +1449,11 @@ static void flow_record_print_json (const struct flow_record *record) {
         }
         zprintf(output, "]");
     } else {
-
         imax = rec->op > num_pkt_len ? num_pkt_len : rec->op;
         jmax = rec->twin->op > num_pkt_len ? num_pkt_len : rec->twin->op;
         i = j = 0;
         ts_last = ts_start;
+        int last_dir = -1;
         while ((i < imax) || (j < jmax)) {
 
             if (i >= imax) {  /* record list is exhausted, so use twin */
@@ -1454,17 +1461,23 @@ static void flow_record_print_json (const struct flow_record *record) {
 	              ts = rec->twin->pkt_time[j];
 	              pkt_len = rec->twin->pkt_len[j];
 	              j++;
+	              if (last_dir == *OUT) first_order_markov_chain[3] += 1.0;
+	              if (last_dir == *IN) first_order_markov_chain[1] += 1.0;
             } else if (j >= jmax) {  /* twin list is exhausted, so use record */
 	              dir = IN;
 	              ts = rec->pkt_time[i];
 	              pkt_len = rec->pkt_len[i];
 	              i++;
+	              if (last_dir == *OUT) first_order_markov_chain[2] += 1.0;
+	              if (last_dir == *IN) first_order_markov_chain[0] += 1.0;
             } else { /* neither list is exhausted, so use list with lowest time */
 
 	              if (timer_lt(&rec->pkt_time[i], &rec->twin->pkt_time[j])) {
 	                    ts = rec->pkt_time[i];
 	                    pkt_len = rec->pkt_len[i];
 	                    dir = IN;
+	                    if (last_dir == *OUT) first_order_markov_chain[2] += 1.0;
+	                    if (last_dir == *IN) first_order_markov_chain[0] += 1.0;
 	                    if (i < imax) {
 	                        i++;
 	                    }
@@ -1472,11 +1485,14 @@ static void flow_record_print_json (const struct flow_record *record) {
 	                  ts = rec->twin->pkt_time[j];
 	                  pkt_len = rec->twin->pkt_len[j];
 	                  dir = OUT;
+	                  if (last_dir == *OUT) first_order_markov_chain[3] += 1.0;
+	                  if (last_dir == *IN) first_order_markov_chain[1] += 1.0;
 	                  if (j < jmax) {
 	                      j++;
 	                  }
 	              }
             }
+            last_dir = *dir;
             // zprintf(output, "i: %d\tj: %d\timax: %d\t jmax: %d", i, j, imax, jmax);
             timer_sub(&ts, &ts_last, &tmp);
             //      zprintf(output, "\t\t\t\t{ \"b\": %u, \"dir\": \"%s\", \"ipt\": %u }",
@@ -1495,6 +1511,16 @@ static void flow_record_print_json (const struct flow_record *record) {
         zprintf(output, "]");
     }
 #endif /* 0 */
+
+    // markkov chain signature
+    zprintf(output, ",\"mc\":{\"1st\":[");
+    double row_sum[2] = {first_order_markov_chain[0] + first_order_markov_chain[1], first_order_markov_chain[2] + first_order_markov_chain[3]};
+    zprintf(output, "%f,", row_sum[0] > 0.0 ? first_order_markov_chain[0] / row_sum[0] : 0.0);
+    zprintf(output, "%f,", row_sum[0] > 0.0 ? first_order_markov_chain[1] / row_sum[0] : 0.0);
+    zprintf(output, "%f,", row_sum[1] > 0.0 ? first_order_markov_chain[2] / row_sum[1] : 0.0);
+    zprintf(output, "%f",  row_sum[1] > 0.0 ? first_order_markov_chain[3] / row_sum[1] : 0.0);
+    zprintf(output, "]");
+    zprintf(output, "}");
 
     if (byte_distribution || report_entropy || compact_byte_distribution) {
         const unsigned int *array;
